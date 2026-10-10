@@ -47,3 +47,25 @@
 - 03-ssh-hardened — после задания 2 (SSH на 2222, root и пароли отключены)
 - 04-firewall — после задания 3 (UFW активен, правило LIMIT)
 - 05-dns — после задания 4 (devops.local, FQDN)
+
+
+## 8. Веб-сервер
+
+- Устанавливаемый пакет: nginx (nginx-common)
+- Конфигурация ресурса: /etc/nginx/sites-available/devops-site
+- Симлинк: /etc/nginx/sites-enabled/devops-site
+- Стандартный ресурс отключён (удалён /etc/nginx/sites-enabled/default)
+- Каталог ресурса: /var/www/devops-site
+- Владелец каталога: devops:devops, права drwxr-xr-x (755)
+- Файлы: -rw-r--r-- (644), владелец devops
+- Сертификат: /etc/ssl/certs/devops.crt (644, root:root)
+- Ключ: /etc/ssl/private/devops.key (600, root:root)
+- Команда формирования сертификата:
+  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/devops.key \
+    -out /etc/ssl/certs/devops.crt \
+    -subj "/CN=devops.local" \
+    -addext "subjectAltName=DNS:devops.local"
+- Срок действия сертификата: 365 дней
+- Порты: 80 (редирект на HTTPS), 443 (HTTPS)
+- Журналы: /var/log/nginx/devops-site.access.log и devops-site.error.log
