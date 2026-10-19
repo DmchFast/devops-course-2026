@@ -49,6 +49,22 @@ check "Нет файлов с правом записи для всех" "0" "$W
 
 check "Права ключа TLS = 600" "600" "$(sudo stat -c '%a' /etc/ssl/private/devops.key)"
 
+echo "[5] Контейнеризация"
+check "Служба docker активна" "active" "$(systemctl is-active docker)"
+
+# Проверка healthcheck базы данных (может занять пару секунд)
+DB_HEALTH=$(docker inspect -f '{{.State.Health.Status}}' app-db-1 2>/dev/null || echo "not_found")
+check "Контейнер СУБД healthy" "healthy" "$DB_HEALTH"
+
+# Проверка портов (5000 и 5432 не должны слушать 0.0.0.0)
+PORTS_OPEN=$(sudo ss -tln | awk '$4 ~ /0\.0\.0\.0:(5000|5432)/ {print $4}' | wc -l)
+check "Порты 5000/5432 не опубликованы в 0.0.0.0" "0" "$PORTS_OPEN"
+
+# Проверка прав .env
+ACTUAL_USER="${SUDO_USER:-$USER}"
+HOME_DIR=$(getent passwd "$ACTUAL_USER" | cut -d: -f6)
+check "Права .env = 600" "600" "$(stat -c '%a' "${HOME_DIR}/devops-course-2026/app/.env")"
+
 echo
 echo "Пройдено: $PASS, не пройдено: $FAIL"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
