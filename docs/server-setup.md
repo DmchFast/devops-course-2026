@@ -80,3 +80,40 @@
 - Публикуемые порты и адреса: приложение — 127.0.0.1:5000; СУБД — не публикуется
 - Именованные тома: app_db_data (для postgres)
 - Конфигурация обратного прокси-сервера: Nginx, location /app/ (proxy_pass на http://127.0.0.1:5000/)
+
+## 10. Ansible
+
+**Расположение проекта:** `ansible/` в репозитории `devops-course-2026`, ветка `feature/ansible`.
+
+**Узлы:** управляющий — WSL Ubuntu с ansible-core 2.16.3 и sshpass; управляемый — VM `devops-vm`, Ubuntu Server 26.04.1, Host-only `192.168.56.102`.
+
+**Inventory:**
+- `inventory/bootstrap.ini` — первичный запуск от `student`, интерактивно (`--ask-pass`);
+- `inventory/prod.ini` — последующие запуски от `devops` по ключу `~/.ssh/devops_vm`, неинтерактивно.
+
+**Учётные записи:** `student` — только bootstrap и резервный доступ через консоль; `devops` — автоматизация, группы `sudo` и `docker`, `NOPASSWD` в `/etc/sudoers.d/devops`.
+
+**Роли:**
+- `base` — проверка платформы, базовые пакеты, `python3-debian`, `python3-requests`, официальный репозиторий Docker через `deb822_repository`, Docker Engine;
+- `ssh` — пользователь `devops`, открытый ключ, sudoers, hardening SSH (`00-ansible-hardening.conf`), UFW (22, 80);
+- `nginx` — пакет, reverse proxy из шаблона, отключение default site, symlink, handlers `nginx -t` → reload;
+- `app` — группа docker, pull образа, контейнер, health-check через `uri`.
+
+**Образ:** `ghcr.io/dmchfast/devops-ci-app`
+**Полный SHA:** `4ec83154ada9080133efb2f81c2a18ca173d0284`
+**Порт контейнера:** 5000, опубликован только на `127.0.0.1`
+**Health endpoint:** `/health`, ожидается `{"status":"ok"}`
+
+**Команды:**
+```
+# первичный запуск
+ansible-playbook -i inventory/bootstrap.ini site.yml --ask-pass
+
+# повторный запуск (идемпотентность, changed=0)
+ansible-playbook site.yml
+
+#read-only аудит
+ansible-playbook verify.yml
+```
+
+Пароли и закрытый ключ в документ не включаются.
