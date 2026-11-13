@@ -1,0 +1,6 @@
+---
+app_image: "ghcr.io/dmchfast/devops-ci-app"
+app_tag: "4ec83154ada9080133efb2f81c2a18ca173d0284"
+app_container_name: "devops-ci-app"
+app_host_port: 5000
+app_internal_port: 5000
